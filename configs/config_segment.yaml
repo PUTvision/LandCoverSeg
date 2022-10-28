@@ -1,0 +1,107 @@
+# name of the run, accessed by loggers
+name: null
+experiment: null
+
+# path to original working directory
+# hydra hijacks working directory by changing it to the current log directory,
+# so it's useful to have this path as a special variable
+# https://hydra.cc/docs/next/tutorials/basic/running_your_app/working_directory
+work_dir: ${hydra:runtime.cwd}
+
+# path to folder with data
+data_dir: ${work_dir}/data/LandCover
+
+#### MODE ####
+debug_mode: False # disable loggers
+eval_mode: False # skip train, require train.resume_from_checkpoint
+
+#### TRAINER ####
+strategy:
+  _target_: pytorch_lightning.strategies.DDPStrategy
+  find_unused_parameters: false
+
+trainer:
+  _target_: pytorch_lightning.Trainer
+  gpus: 1
+  precision: 32
+  max_epochs: 200
+  resume_from_checkpoint: null
+
+#### MODEL ####
+model:
+  _target_: src.models.segmenter.Segmenter
+  model_name: UNet
+  encoder_name: resnet34
+  input_channels: 3
+  classes: ['background', 'roads']
+  loss_function: FocalDice
+  lr: 1e-4
+  lr_patience: 10
+  visualize_test_images: True
+
+#### DATA ####
+datamodule:
+  _target_: src.datamodules.segmentation_data_module.SegmentationDataModule
+  data_path: ${data_dir}
+  dataset: src.datamodules.datasets.landcoverseg_dataset.LandCoverDataset
+  number_of_workers: 8
+  batch_size: 16
+  image_size: [ 512, 512 ]
+  image_mean: [ 0.485, 0.456, 0.406 ]
+  image_std: [ 0.229, 0.224, 0.225 ]
+  augment: True
+  number_of_splits: None
+  current_split: None
+
+
+#### CALLBACKS ####
+callbacks:
+  model_checkpoint:
+    _target_: pytorch_lightning.callbacks.ModelCheckpoint
+    monitor: "val_dice_with_bg" # name of the logged metric which determines when model is improving
+    mode: "max" # can be "max" or "min"
+    save_top_k: 1 # save k best models (determined by above metric)
+    save_last: False # additionally, always save model from last epoch
+    verbose: False
+    dirpath: "checkpoints/"
+    filename: "epoch_{epoch:03d}"
+    auto_insert_metric_name: False
+  early_stopping:
+    _target_: pytorch_lightning.callbacks.EarlyStopping
+    monitor: "val_dice_with_bg" # name of the logged metric which determines when model is improving
+    mode: "max" # can be "max" or "min"
+    patience: 20 # how many validation epochs of not improving until training stops
+    min_delta: 0 # minimum change in the monitored metric needed to qualify as an improvement
+
+#### LOGGER ####
+logger:
+  neptune:
+    _target_: pytorch_lightning.loggers.neptune.NeptuneLogger
+    api_key: ${oc.env:NEPTUNE_API_TOKEN}
+    project: ${oc.env:NEPTUNE_PROJECT_NAME}
+    log_model_checkpoints: false
+    name: ${name}
+
+
+#### OTHER ####
+
+# enable color logging
+override hydra/hydra_logging: colorlog
+override hydra/job_logging: colorlog
+
+# pretty print config at the start of the run using Rich library
+print_config: True
+
+# disable python warnings if they annoy you
+ignore_warnings: True
+
+# check performance on test set, using the best model achieved during training
+# lightning chooses best model based on metric specified in checkpoint callback
+test_after_training: True
+export:
+  export_to_onnx: False
+  opset: 15
+  use_simplifier: True
+
+# seed for random number generators in pytorch, numpy and python.random
+seed: 42

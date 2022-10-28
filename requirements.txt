@@ -1,0 +1,36 @@
+# --------- pytorch --------- #
+torch==1.11.0
+torchvision==0.12.0
+pytorch-lightning==1.6.0
+torchmetrics==0.7.3
+
+# --------- hydra --------- #
+hydra-core
+hydra-colorlog
+hydra-optuna-sweeper
+
+# --------- loggers --------- #
+neptune-client
+
+# --------- export --------- #
+onnx
+onnx-simplifier
+
+# --------- linters --------- #
+pre-commit      # hooks for applying linters on commit
+black           # code formatting
+isort           # import sorting
+flake8          # code analysis
+
+# --------- others --------- #
+zarr            # Fast data reading
+python-dotenv   # loading env variables from .env file
+rich            # beautiful text formatting in terminal
+pytest          # tests
+sh              # for running bash commands in some tests
+scikit-learn    # used in some callbacks
+jupyterlab      # better jupyter notebooks
+opencv-python # image processing library
+albumentations  # Fast image augmentation library
+segmentation_models_pytorch # Segmentation models
+monai           # Metrics and losses for segmentaion task
