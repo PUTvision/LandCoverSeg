@@ -1,12 +1,12 @@
 # LandCover Segmentation
 
-![seg](https://qgis-plugin-deepness.readthedocs.io/en/latest/_images/example_landcover_output_map.webp)
+![seg](./example_landcover_output_map.webp)
 
 ## Description
 
-This repository is a example pipeline for training and evaluating segmentation model for [Deepness: Deep Neural Remote Sensing plugin for QGIS](https://qgis-plugin-deepness.readthedocs.io/en/latest/index.html).
+This repository is an example pipeline for training and evaluating the segmentation model for [Deepness: Deep Neural Remote Sensing plugin for QGIS](https://qgis-plugin-deepness.readthedocs.io/en/latest/index.html).
 
-This repository contains code for training and evaluating LandCover segmentation model based on the [LandCover.ai dataset](https://landcover.ai.linuxpolska.com/).
+This repository contains code for training and evaluating the LandCover segmentation model based on the [LandCover.ai dataset](https://landcover.ai.linuxpolska.com/).
 
 Ready-to-use model and example inference in QGIS are available in our [LandCover segmentation example](https://qgis-plugin-deepness.readthedocs.io/en/latest/example/example_segmentation_landcover.html).
 
@@ -24,10 +24,10 @@ pip3 install -r requirements.txt
 * Prepare dataset for training and evaluation
 
   ```commandline
-  # create directory for dataset
+  # create a directory for the dataset
   mkdir data/LandCover
 
-  # move to dataset directory
+  # move to the dataset directory
   cd data/LandCover
 
   # download dataset
@@ -36,7 +36,7 @@ pip3 install -r requirements.txt
   # extract dataset
   unzip landcover.ai.v1.zip
   
-  # (optionally) remove zip file
+  # (optionally) remove the zip file
   rm landcover.ai.v1.zip
   
   # create train-val-test split
@@ -56,7 +56,7 @@ pip3 install -r requirements.txt
 
   * NONE
 
-    If you don't want to use any logger, just add ` ~logger` in commands below.
+    If you don't want to use any logger, just add ` ~logger` in the commands below.
 
 
 * Run training pipeline
@@ -64,7 +64,7 @@ pip3 install -r requirements.txt
   python run.py name=landseg
   ```
     
-* You can run evaluation pipeline if you have trained model
+* You can run an evaluation pipeline if you have trained model
   ```commandline
   python run.py name=landseg eval_mode=True trainer.resume_from_checkpoint=./path/to/model
   ```
