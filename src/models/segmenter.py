@@ -7,7 +7,9 @@ import torchmetrics
 
 from src.losses.dice_loss import DiceLoss
 from src.losses.focal_dice_loss import FocalDiceLoss
+from src.losses.focal_loss import FocalLoss
 from src.metrics.dice_metric import DiceMetric
+from src.metrics.iou_metric import IOUMetric
 from src.models.segmenter_visualizate_utils import visualize_segmentation_predition
 
 
@@ -46,7 +48,7 @@ class Segmenter(pl.LightningModule):
             encoder_weights="imagenet",
             in_channels=self._input_channels,
             classes=len(self._classes),
-            activation='softmax'
+            activation=None
         )
 
         if loss_function == 'MAE':
@@ -55,6 +57,8 @@ class Segmenter(pl.LightningModule):
             self.loss = torchmetrics.MeanSquaredError()
         elif loss_function == 'Dice':
             self.loss = DiceLoss()
+        elif loss_function == 'Focal':
+            self.loss = FocalLoss()
         elif loss_function == 'FocalDice':
             self.loss = FocalDiceLoss()
             
@@ -63,11 +67,8 @@ class Segmenter(pl.LightningModule):
                 f'Unsupported loss function: {loss_function}')
 
         metrics = torchmetrics.MetricCollection({
-            'mae': torchmetrics.MeanAbsoluteError(),
-            'mse': torchmetrics.MeanSquaredError(),
-            'dice_with_bg': DiceMetric(include_background=True),
-            'dice_with_bg_no_empty': DiceMetric(include_background=True, ignore_empty=False),
-            'dice': DiceMetric(include_background=False),
+            'dice': DiceMetric(classes=len(self._classes)),
+            'iou': IOUMetric(classes=len(self._classes)),
         })
 
         self.train_metrics = metrics.clone('train_')
@@ -98,7 +99,6 @@ class Segmenter(pl.LightningModule):
     def validation_step(self, batch: torch.Tensor, batch_idx: int) -> None:
         x, y = batch
         y_pred = self.forward(x)
-
         loss = self.loss(y_pred, y)
 
         self.log('val_loss', loss, on_step=False,
@@ -115,17 +115,22 @@ class Segmenter(pl.LightningModule):
                  on_epoch=True, sync_dist=True)
         self.log_dict(self.test_metrics(y_pred, y))
 
-        if self._visualize_test_images:
+        if self._visualize_test_images and self.logger is not None:
             visualize_segmentation_predition(self.logger, x, y, y_pred)
 
 
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=self._lr)
-        reduce_lr_on_plateau = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5,
-                                                                          patience=self._lr_patience, min_lr=1e-6,
-                                                                          verbose=True)
-        return {
-            'optimizer': optimizer,
-            'lr_scheduler': reduce_lr_on_plateau,
-            'monitor': 'train_loss_epoch'
-        }
+        self.optimizer = torch.optim.AdamW(self.parameters(), lr=0.001, weight_decay=0.0005)
+        
+        self.s = torch.optim.lr_scheduler.CosineAnnealingLR(
+                self.optimizer,
+                T_max=237,
+                eta_min=1e-7
+            )
+
+        sched = {
+               'scheduler': self.s,
+               'interval': 'step',
+            }
+        
+        return [self.optimizer], [sched]

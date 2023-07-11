@@ -33,6 +33,7 @@ class LandCoverDataset(Dataset):
         image_name = self._images_list[index]
 
         frame = cv2.imread(f'{self._data_root}/output/{image_name}.jpg')
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         label = cv2.imread(f'{self._data_root}/output/{image_name}_m.png', cv2.IMREAD_GRAYSCALE)
 
         mask = np.zeros((*label.shape[:2], 5), dtype=np.uint8)

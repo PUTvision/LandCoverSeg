@@ -34,3 +34,5 @@ opencv-python # image processing library
 albumentations  # Fast image augmentation library
 segmentation_models_pytorch # Segmentation models
 monai           # Metrics and losses for segmentaion task
+matplotlib      # Plotting
+

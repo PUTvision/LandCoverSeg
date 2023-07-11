@@ -9,7 +9,8 @@ class FocalDiceLoss(nn.Module):
 
         self.loss = monai.losses.DiceFocalLoss(
                 include_background=True,
-                reduction='none'
+                reduction='none',
+                softmax=True,
             )
         self.weights = torch.tensor([[0.34523039, 23.35764161,  0.60372157,  3.09578992, 12.32148783]]).cuda()
 

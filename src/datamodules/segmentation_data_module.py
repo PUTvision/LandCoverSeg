@@ -3,6 +3,7 @@ from collections import deque
 from pathlib import Path
 from random import Random
 from typing import Optional, List, Tuple
+from glob import glob 
 
 import albumentations as A
 import cv2
@@ -43,8 +44,7 @@ class SegmentationDataModule(LightningDataModule):
         self._test_dataset = None
 
         self._transforms = A.Compose([
-            A.LongestMaxSize(self._image_size[0]),
-            A.PadIfNeeded(self._image_size[1], self._image_size[0], border_mode=cv2.BORDER_CONSTANT, value=0),
+            A.CenterCrop(self._image_size[0], self._image_size[1], always_apply=True),
             A.Normalize(mean=self._image_mean, std=self._image_std),
             ToTensorV2()
         ])
@@ -58,8 +58,7 @@ class SegmentationDataModule(LightningDataModule):
             A.Affine(rotate=(-5, 5), translate_px=(-10, 10), scale=(0.9, 1.1)),
             A.Flip(),
             # transforms
-            A.LongestMaxSize(image_size[0]),
-            A.PadIfNeeded(image_size[1], image_size[0], border_mode=cv2.BORDER_CONSTANT, value=0),
+            A.RandomCrop(self._image_size[0], self._image_size[1], always_apply=True),
             A.Normalize(mean=self._image_mean, std=self._image_std),
             ToTensorV2()
         ])
